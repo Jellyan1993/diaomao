@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>屌毛生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        /* 导航栏 */
+        .navbar {
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .navbar h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        /* 主容器 */
+        .container {
+            display: flex;
+            padding: 2rem;
+            gap: 2rem;
+        }
+        
+        /* 左侧画布区域 */
+        .canvas-container {
+            flex: 1;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1rem;
+            position: relative;
+            min-height: 600px;
+        }
+        
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        
+        /* 右侧配置面板 */
+        .controls {
+            width: 300px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+        }
+        
+        .controls h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .control-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        .control-group input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .control-group .value {
+            font-size: 0.9rem;
+            color: #777;
+        }
+        
+        /* 导出按钮 */
+        .export-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .export-btn:hover {
+            background-color: #45a049;
+        }
+        
+        /* 右下角属名 */
+        .footer {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            font-size: 0.8rem;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <h1>屌毛生成器</h1>
+    </nav>
+    
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 左侧画布区域 -->
+        <div class="canvas-container">
+            <canvas id="hairCanvas" width="600" height="500"></canvas>
+        </div>
+        
+        <!-- 右侧配置面板 -->
+        <div class="controls">
+            <h2>配置参数</h2>
+            
+            <div class="control-group">
+                <label for="length">长度</label>
+                <input type="range" id="length" min="50" max="300" value="150">
+                <div class="value">150px</div>
+            </div>
+            
+            <div class="control-group">
+                <label for="curls">卷曲数量</label>
+                <input type="range" id="curls" min="0" max="10" value="3">
+                <div class="value">3</div>
+            </div>
+            
+            <div class="control-group">
+                <label for="curliness">卷曲度</label>
+                <input type="range" id="curliness" min="0" max="50" value="20">
+                <div class="value">20</div>
+            </div>
+            
+            <div class="control-group">
+                <label for="curlAmplitude">卷曲幅度</label>
+                <input type="range" id="curlAmplitude" min="1" max="10" value="5">
+                <div class="value">5</div>
+            </div>
+            
+            <div class="control-group">
+                <label for="color">颜色</label>
+                <input type="color" id="color" value="#333333">
+            </div>
+            
+            <div class="control-group">
+                <label for="thickness">粗细程度</label>
+                <input type="range" id="thickness" min="1" max="10" value="3">
+                <div class="value">3px</div>
+            </div>
+            
+            <div class="control-group">
+                <label for="stiffness">刚性</label>
+                <input type="range" id="stiffness" min="1" max="10" value="5">
+                <div class="value">5</div>
+            </div>
+            
+            <button class="export-btn" id="exportBtn">导出图片</button>
+        </div>
+    </div>
+    
+    <!-- 右下角属名 -->
+    <div class="footer">
+        By Jellyan
+    </div>
+    
+    <script>
+        // 全局变量
+        const canvas = document.getElementById('hairCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDragging = false;
+        let dragPoint = { x: 0, y: 0 };
+        
+        // 毛发参数
+        let hairParams = {
+            length: 150,
+            curls: 3,
+            curliness: 20,
+            curlAmplitude: 5,
+            color: '#333333',
+            thickness: 3,
+            stiffness: 5
+        };
+        
+        // 初始化毛发点
+        let hairPoints = [];
+        
+        // 初始化函数
+        function init() {
+            updateHairPoints();
+            drawHair();
+            setupEventListeners();
+            setupControlListeners();
+        }
+        
+        // 更新毛发点
+        function updateHairPoints() {
+            hairPoints = [];
+            const startX = canvas.width / 2;
+            const startY = canvas.height / 2;
+            const segments = 50; // 增加分段数量以获得更平滑的曲线
+            
+            for (let i = 0; i <= segments; i++) {
+                const t = i / segments;
+                const amplitudeFactor = Math.pow(t, hairParams.curlAmplitude);
+                const x = startX + (Math.sin(t * Math.PI * 2 * hairParams.curls) * hairParams.curliness * amplitudeFactor);
+                const y = startY + (t * hairParams.length);
+                hairPoints.push({ x, y });
+            }
+        }
+        
+        // 绘制毛发
+        function drawHair() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = 0; i < hairPoints.length - 1; i++) {
+                const t = i / (hairPoints.length - 1);
+                const lineWidth = hairParams.thickness * (1 - t * 0.8);
+                
+                ctx.beginPath();
+                ctx.moveTo(hairPoints[i].x, hairPoints[i].y);
+                ctx.lineTo(hairPoints[i + 1].x, hairPoints[i + 1].y);
+                ctx.strokeStyle = hairParams.color;
+                ctx.lineWidth = lineWidth;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.stroke();
+            }
+        }
+        
+        // 处理拖动
+        function handleDrag(x, y) {
+            if (!isDragging) return;
+            
+            const startX = canvas.width / 2;
+            const startY = canvas.height / 2;
+            const distance = Math.sqrt((x - startX) ** 2 + (y - startY) ** 2);
+            const maxDistance = hairParams.length;
+            
+            // 限制拖动距离
+            if (distance > maxDistance) {
+                const angle = Math.atan2(y - startY, x - startX);
+                dragPoint.x = startX + Math.cos(angle) * maxDistance;
+                dragPoint.y = startY + Math.sin(angle) * maxDistance;
+            } else {
+                dragPoint.x = x;
+                dragPoint.y = y;
+            }
+            
+            // 计算目标点
+            const targetX = startX + (Math.sin(Math.PI * 2 * hairParams.curls) * hairParams.curliness * Math.pow(1, hairParams.curlAmplitude));
+            const targetY = startY + hairParams.length;
+            
+            // 更新毛发点（带物理效果的整根拖动）
+            for (let i = 0; i < hairPoints.length; i++) {
+                const t = i / (hairPoints.length - 1);
+                const stiffnessFactor = 1 - (t * (1 - hairParams.stiffness / 10));
+                const originalX = startX + (Math.sin(t * Math.PI * 2 * hairParams.curls) * hairParams.curliness * Math.pow(t, hairParams.curlAmplitude));
+                const originalY = startY + (t * hairParams.length);
+                
+                hairPoints[i].x = originalX + (dragPoint.x - targetX) * stiffnessFactor;
+                hairPoints[i].y = originalY + (dragPoint.y - targetY) * stiffnessFactor;
+            }
+            
+            drawHair();
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            canvas.addEventListener('mousedown', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // 检查是否点击到毛发
+                const startX = canvas.width / 2;
+                const startY = canvas.height / 2;
+                const distance = Math.sqrt((x - startX) ** 2 + (y - startY) ** 2);
+                
+                if (distance <= hairParams.length) {
+                    isDragging = true;
+                    dragPoint.x = x;
+                    dragPoint.y = y;
+                }
+            });
+            
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                handleDrag(x, y);
+            });
+            
+            canvas.addEventListener('mouseup', () => {
+                isDragging = false;
+                updateHairPoints();
+                drawHair();
+            });
+            
+            canvas.addEventListener('mouseleave', () => {
+                isDragging = false;
+                updateHairPoints();
+                drawHair();
+            });
+        }
+        
+        // 设置控制监听器
+        function setupControlListeners() {
+            const lengthSlider = document.getElementById('length');
+            const curlsSlider = document.getElementById('curls');
+            const curlinessSlider = document.getElementById('curliness');
+            const curlAmplitudeSlider = document.getElementById('curlAmplitude');
+            const colorPicker = document.getElementById('color');
+            const thicknessSlider = document.getElementById('thickness');
+            const stiffnessSlider = document.getElementById('stiffness');
+            const exportBtn = document.getElementById('exportBtn');
+            
+            lengthSlider.addEventListener('input', () => {
+                hairParams.length = parseInt(lengthSlider.value);
+                document.querySelector('#length + .value').textContent = hairParams.length + 'px';
+                updateHairPoints();
+                drawHair();
+            });
+            
+            curlsSlider.addEventListener('input', () => {
+                hairParams.curls = parseInt(curlsSlider.value);
+                document.querySelector('#curls + .value').textContent = hairParams.curls;
+                updateHairPoints();
+                drawHair();
+            });
+            
+            curlinessSlider.addEventListener('input', () => {
+                hairParams.curliness = parseInt(curlinessSlider.value);
+                document.querySelector('#curliness + .value').textContent = hairParams.curliness;
+                updateHairPoints();
+                drawHair();
+            });
+            
+            curlAmplitudeSlider.addEventListener('input', () => {
+                hairParams.curlAmplitude = parseInt(curlAmplitudeSlider.value);
+                document.querySelector('#curlAmplitude + .value').textContent = hairParams.curlAmplitude;
+                updateHairPoints();
+                drawHair();
+            });
+            
+            colorPicker.addEventListener('input', () => {
+                hairParams.color = colorPicker.value;
+                drawHair();
+            });
+            
+            thicknessSlider.addEventListener('input', () => {
+                hairParams.thickness = parseInt(thicknessSlider.value);
+                document.querySelector('#thickness + .value').textContent = hairParams.thickness + 'px';
+                drawHair();
+            });
+            
+            stiffnessSlider.addEventListener('input', () => {
+                hairParams.stiffness = parseInt(stiffnessSlider.value);
+                document.querySelector('#stiffness + .value').textContent = hairParams.stiffness;
+            });
+            
+            exportBtn.addEventListener('click', () => {
+                const dataURL = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = dataURL;
+                link.download = 'hair.png';
+                link.click();
+            });
+        }
+        
+        // 初始化
+        init();
+    </script>
+</body>
+</html>
