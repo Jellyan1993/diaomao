@@ -53,6 +53,7 @@
             margin: 0 auto;
             border: 1px solid #e0e0e0;
             border-radius: 4px;
+            max-width: 100%;
         }
         
         /* 右侧配置面板 */
@@ -62,6 +63,45 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             padding: 1.5rem;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                padding: 1rem;
+                gap: 1rem;
+            }
+            
+            .canvas-container {
+                min-height: 400px;
+            }
+            
+            canvas {
+                width: 100%;
+                height: auto;
+                max-width: 100%;
+            }
+            
+            .controls {
+                width: 100%;
+                max-width: 100%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .navbar h1 {
+                font-size: 1.2rem;
+            }
+            
+            .canvas-container {
+                min-height: 300px;
+                padding: 0.5rem;
+            }
+            
+            .controls {
+                padding: 1rem;
+            }
         }
         
         .controls h2 {
@@ -217,10 +257,27 @@
         
         // 初始化函数
         function init() {
+            resizeCanvas();
             updateHairPoints();
             drawHair();
             setupEventListeners();
             setupControlListeners();
+            window.addEventListener('resize', resizeCanvas);
+        }
+        
+        // 调整canvas尺寸
+        function resizeCanvas() {
+            const container = document.querySelector('.canvas-container');
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            // 设置canvas的最大尺寸，确保在移动设备上也能正常显示
+            canvas.width = Math.min(600, containerWidth - 20); // 20px padding
+            canvas.height = Math.min(500, containerHeight - 20); // 20px padding
+            
+            // 重新计算毛发点
+            updateHairPoints();
+            drawHair();
         }
         
         // 更新毛发点

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>按工况着色的叠加图</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body { background-color: #f8f9fa; padding: 20px; }
+        #chart { width: 100%; height: 600px; background: white; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div id="chart"></div>
+
+    <script>
+        const myChart = echarts.init(document.getElementById('chart'));
+
+        // 定义工况主色调
+        const CASE_COLORS = ['#3366CC', '#990099', '#109618', '#FF9900'];
+
+        // 模拟数据生成
+        function getCaseData(offset) {
+            let v = [], i = [], s = [];
+            for (let t = 0; t <= 100; t += 10) {
+                v.push([t, (4.0 - t * 0.005 + offset).toFixed(3)]);
+                i.push([t, (60 + Math.random() * 10).toFixed(1)]);
+                s.push([t, (100 - t * 0.8).toFixed(1)]);
+            }
+            return { v, i, s };
+        }
+
+        const data1 = getCaseData(0.1); // 工况 1
+        const data2 = getCaseData(0.0); // 工况 2
+
+        const option = {
+            title: { text: '趋势叠加图 (按工况着色)', left: 'center' },
+            tooltip: { trigger: 'axis' },
+            legend: { top: 40 },
+            grid: { right: '15%', left: '10%' },
+            xAxis: { type: 'value', name: '相对时间(s)' },
+            yAxis: [
+                { type: 'value', name: '电压(V)', min: 3.4 },
+                { type: 'value', name: '电流(A)', position: 'right' },
+                { type: 'value', name: 'SOC(%)', position: 'right', offset: 60, max: 100 }
+            ],
+            series: [
+                // --- 工况 1 (主色: 蓝色) ---
+                {
+                    name: '工况1-电压', type: 'line', data: data1.v,
+                    lineStyle: { width: 4, color: CASE_COLORS[0] }, // 加粗实线
+                    itemStyle: { color: CASE_COLORS[0] }
+                },
+                {
+                    name: '工况1-电流', type: 'line', yAxisIndex: 1, data: data1.i,
+                    lineStyle: { width: 1.5, type: 'dashed', color: CASE_COLORS[0] }, // 虚线
+                    itemStyle: { color: CASE_COLORS[0] }
+                },
+                {
+                    name: '工况1-SOC', type: 'line', yAxisIndex: 2, data: data1.s,
+                    lineStyle: { width: 1, type: 'dotted', color: CASE_COLORS[0] }, // 点线
+                    itemStyle: { color: CASE_COLORS[0] }
+                },
+
+                // --- 工况 2 (主色: 紫色) ---
+                {
+                    name: '工况2-电压', type: 'line', data: data2.v,
+                    lineStyle: { width: 4, color: CASE_COLORS[1] },
+                    itemStyle: { color: CASE_COLORS[1] }
+                },
+                {
+                    name: '工况2-电流', type: 'line', yAxisIndex: 1, data: data2.i,
+                    lineStyle: { width: 1.5, type: 'dashed', color: CASE_COLORS[1] },
+                    itemStyle: { color: CASE_COLORS[1] }
+                },
+                {
+                    name: '工况2-SOC', type: 'line', yAxisIndex: 2, data: data2.s,
+                    lineStyle: { width: 1, type: 'dotted', color: CASE_COLORS[1] },
+                    itemStyle: { color: CASE_COLORS[1] }
+                }
+            ]
+        };
+
+        myChart.setOption(option);
+    </script>
+</body>
+</html>

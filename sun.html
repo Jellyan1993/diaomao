@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>电池工况关联分析 (风险热力图)</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div id="sunburst" style="width: 800px; height: 700px; margin: auto;"></div>
+
+    <script>
+        var myChart = echarts.init(document.getElementById('sunburst'));
+
+        // 定义基础色
+        const COLORS = {
+            charge: [84, 112, 198],    // 蓝色基准
+            discharge: [250, 200, 88], // 橙色基准
+            standby: [153, 153, 153]   // 灰色基准
+        };
+
+        // 颜色亮度计算函数：数值越大，颜色越深
+        function getDynamicColor(baseRGB, value, maxVal) {
+            let intensity = Math.min(value / maxVal, 0.7); // 0.7 为最大深浅度
+            let r = Math.floor(baseRGB[0] * (1 - intensity));
+            let g = Math.floor(baseRGB[1] * (1 - intensity));
+            let b = Math.floor(baseRGB[2] * (1 - intensity));
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        // 数据结构：score 代表电压极差 (0-50mV)
+        const data = [{
+            name: '充电',
+            itemStyle: { color: 'rgb(84, 112, 198)' },
+            children: [
+                { name: '低倍率', children: [
+                    { name: '0-20%', value: 15, itemStyle: { color: getDynamicColor(COLORS.charge, 10, 50) } },
+                    { name: '20-80%', value: 40, itemStyle: { color: getDynamicColor(COLORS.charge, 15, 50) } }
+                ]},
+                { name: '高倍率', children: [
+                    { name: '0-20%', value: 10, itemStyle: { color: getDynamicColor(COLORS.charge, 45, 50) } }
+                ]}
+            ]
+        }, {
+            name: '放电',
+            itemStyle: { color: 'rgb(250, 200, 88)' },
+            children: [
+                { name: '中倍率', children: [
+                    { name: '100-60%', value: 30, itemStyle: { color: getDynamicColor(COLORS.discharge, 12, 50) } },
+                    { name: '20-0%', value: 15, itemStyle: { color: getDynamicColor(COLORS.discharge, 40, 50) } }
+                ]}
+            ]
+        }, {
+            name: '静置',
+            itemStyle: { color: 'rgb(153, 153, 153)' },
+            children: [
+                { name: '满电静置', value: 20, itemStyle: { color: getDynamicColor(COLORS.standby, 5, 50) } }
+            ]
+        }];
+
+        const option = {
+            title: { text: '电池工况风险分布 (极差映射)', left: 'center' },
+            legend: { data: ['充电', '放电', '静置'], bottom: 20 },
+            tooltip: { trigger: 'item' },
+            series: [{
+                type: 'sunburst',
+                data: data,
+                radius: [0, '90%'],
+                emphasis: { focus: 'ancestor' },
+                label: { show: true }
+            }]
+        };
+
+        myChart.setOption(option);
+    </script>
+</body>
+</html>

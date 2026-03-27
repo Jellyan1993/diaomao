@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>运行工况特征值分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f7f9; padding: 20px; }
+        .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; }
+        .chart-container { width: 100%; height: 400px; margin-top: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        h3 { border-left: 4px solid #1890ff; padding-left: 10px; color: #333; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h3>工况参数卡片</h3>
+        <div class="grid">
+            <div><strong>工况类型：</strong> 恒流充电</div>
+            <div><strong>持续时间：</strong> 120 min</div>
+            <div><strong>平均倍率：</strong> 0.5C</div>
+            <div><strong>起始电压：</strong> 380.5V</div>
+            <div><strong>电压变化值：</strong> +45.2V</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Tab 1: 簇级参数趋势 (电压/电流/SOC)</h3>
+        <div id="clusterChart" class="chart-container"></div>
+    </div>
+
+    <div class="card">
+        <h3>Tab 2: 单体电压一致性分析 (最大/最小/平均)</h3>
+        <div id="cellVoltageChart" class="chart-container"></div>
+    </div>
+
+    <script>
+        // --- Tab 1: 簇级参数图表配置 ---
+        const clusterChart = echarts.init(document.getElementById('clusterChart'));
+        const timeData = ['10:00', '10:15', '10:30', '10:45', '11:00', '11:15', '11:30', '11:45', '12:00'];
+        
+        clusterChart.setOption({
+            tooltip: { trigger: 'axis' },
+            legend: { data: ['电压', '电流', 'SOC'] },
+            xAxis: { type: 'category', data: timeData },
+            yAxis: [
+                { type: 'value', name: '电压(V)', position: 'left', axisLine: {show: true}, min: 380 },
+                { type: 'value', name: '电流(A)', position: 'right', axisLine: {show: true} },
+                { type: 'value', name: 'SOC(%)', position: 'right', offset: 60, max: 100, axisLine: {show: true} }
+            ],
+            series: [
+                { name: '电压', type: 'line', data: [380, 390, 405, 415, 420, 422, 424, 425, 425], smooth: true },
+                { name: '电流', type: 'line', yAxisIndex: 1, data: [100, 100, 100, 100, 80, 60, 40, 20, 0], step: 'start' },
+                { name: 'SOC', type: 'line', yAxisIndex: 2, data: [20, 30, 45, 60, 75, 85, 92, 98, 100], lineStyle: { type: 'dashed' } }
+            ]
+        });
+
+        // --- Tab 2: 单体电压分析图表配置 ---
+        const cellVoltageChart = echarts.init(document.getElementById('cellVoltageChart'));
+        cellVoltageChart.setOption({
+            tooltip: { trigger: 'axis' },
+            legend: { data: ['最大电压', '最小电压', '平均电压'] },
+            xAxis: { type: 'category', data: timeData },
+            yAxis: { type: 'value', name: '电压(V)', scale: true },
+            series: [
+                { name: '最大电压', type: 'line', data: [3.35, 3.38, 3.42, 3.45, 3.48, 3.50, 3.52, 3.55, 3.55], itemStyle: {color: '#ff4d4f'} },
+                { name: '最小电压', type: 'line', data: [3.31, 3.32, 3.35, 3.38, 3.40, 3.41, 3.42, 3.43, 3.43], itemStyle: {color: '#52c41a'} },
+                { name: '平均电压', type: 'line', data: [3.33, 3.35, 3.38, 3.41, 3.44, 3.45, 3.47, 3.49, 3.49], lineStyle: { width: 3, color: '#1890ff' } }
+            ]
+        });
+
+        // 自适应窗口大小
+        window.onresize = function() {
+            clusterChart.resize();
+            cellVoltageChart.resize();
+        };
+    </script>
+    <div class="card">
+        <h3>Tab 3: 单体温度分析 (最高/最低/平均)</h3>
+        <div id="tempAnalysisChart" class="chart-container"></div>
+    </div>
+
+    <div class="card">
+        <h3>Tab 4: 一致性指标趋势 (CV / 极差)</h3>
+        <div id="consistencyChart" class="chart-container"></div>
+    </div>
+
+    <script>
+        // 模拟时间轴
+        const timeLabels = ['10:00', '10:15', '10:30', '10:45', '11:00', '11:15', '11:30', '11:45', '12:00'];
+
+        // --- Tab 3: 单体温度图表配置 ---
+        const tempChart = echarts.init(document.getElementById('tempAnalysisChart'));
+        tempChart.setOption({
+            tooltip: { trigger: 'axis' },
+            legend: { data: ['最高温度', '最低温度', '平均温度', '温差(极差)'] },
+            xAxis: { type: 'category', data: timeLabels },
+            yAxis: [
+                { type: 'value', name: '温度(℃)', scale: true },
+                { type: 'value', name: '极差(℃)', position: 'right' }
+            ],
+            series: [
+                { name: '最高温度', type: 'line', data: [25, 26, 28, 31, 33, 34, 35, 35, 36], itemStyle: {color: '#f5222d'} },
+                { name: '最低温度', type: 'line', data: [24, 24.5, 25, 26, 27, 27.5, 28, 28.2, 28.5], itemStyle: {color: '#1890ff'} },
+                { name: '平均温度', type: 'line', data: [24.5, 25.2, 26.5, 28.5, 30, 31, 31.5, 31.8, 32.2], lineStyle: {type: 'dotted'} },
+                { name: '温差(极差)', type: 'bar', yAxisIndex: 1, data: [1, 1.5, 3, 5, 6, 6.5, 7, 6.8, 7.5], itemStyle: {color: 'rgba(255, 165, 0, 0.3)'} }
+            ]
+        });
+
+        // --- Tab 4: 一致性指标图表配置 ---
+        const consistencyChart = echarts.init(document.getElementById('consistencyChart'));
+        consistencyChart.setOption({
+            tooltip: { trigger: 'axis' },
+            legend: { data: ['电压变异系数 CV(%)', '电压极差(V)'] },
+            xAxis: { type: 'category', data: timeLabels },
+            yAxis: [
+                { type: 'value', name: 'CV (%)', axisLabel: {formatter: '{value}%'} },
+                { type: 'value', name: '极差 (V)', position: 'right' }
+            ],
+            series: [
+                { 
+                    name: '电压变异系数 CV(%)', 
+                    type: 'line', 
+                    smooth: true,
+                    data: [0.12, 0.15, 0.22, 0.35, 0.48, 0.52, 0.55, 0.58, 0.61],
+                    areaStyle: { color: 'rgba(24, 144, 255, 0.1)' }
+                },
+                { 
+                    name: '电压极差(V)', 
+                    type: 'line', 
+                    yAxisIndex: 1, 
+                    data: [0.02, 0.03, 0.05, 0.08, 0.12, 0.14, 0.15, 0.17, 0.18],
+                    lineStyle: { color: '#722ed1' }
+                }
+            ]
+        });
+
+        window.addEventListener('resize', () => {
+            tempChart.resize();
+            consistencyChart.resize();
+        });
+    </script>
+</body>
+</html>
